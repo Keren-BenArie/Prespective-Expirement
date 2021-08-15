@@ -1,0 +1,863 @@
+<!doctype html>
+<html>
+    <head>
+        <title></title>
+        <!-- import jquery -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<!-- import jsPsych -->       
+        <script src="./experiment/jspsych-5.0.3/jspsych.js"></script>
+        <!-- import plugins -->
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-single-stim.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-survey-text.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-text.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-survey-multi-choice.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-survey-multi-choice-matrix.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-multi-stim-multi-response.js"></script>
+		<script src="./experiment/jspsych-5.0.3/plugins/jspsych-call-function.js"></script>
+		<script src="./experiment/jspsych-5.0.3/plugins/jspsych-cued-trial.js"></script>
+		<script src="./experiment/jspsych-5.0.3/plugins/jspsych-categorize.js"></script>
+		<script src="./experiment/jspsych-5.0.3/plugins/jspsych-instructions.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-button-response.js"></script>
+        <script src="./experiment/jspsych-5.0.3/plugins/jspsych-animation.js"></script>
+		
+        <!-- use default jsPsych visual style -->
+        <link href="./experiment/jspsych-5.0.3/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+    </head>
+    <style>
+	    .square {
+		  background: white;
+		  border-style: solid;
+		  width: 130px;
+		  height: 100px;
+		  display: none;
+		  
+		  font-size: 40px;
+		  text-align: center;
+		  line-height: 100px;
+		  
+  		  position: fixed; 
+  		  top: 50%; 
+  		  left: 50%;  
+  		  margin-top: -80px; 
+  		  margin-left: -65px;
+  		  /*margin: auto;*/
+  		  /*position: absolute;*/
+  		  /*top: 0; left: 0; bottom: 0; right: 0;*/
+		}
+	</style>
+
+    <body>
+    <p id="loadingMessage" align="center"></p>
+    </body>
+
+    <script>
+        // Create image arrays:
+    var congruentImages_F = [], incongruentImages_F = [];
+	var currIndex=0, secondIndex = 0;
+	while(currIndex < 4){
+		congruentImages_F.push("stim/S"+currIndex+"_O"+currIndex+"_FR.jpg");
+		congruentImages_F.push("stim/S"+currIndex+"_O"+currIndex+"_FL.jpg");
+		currIndex += 1;
+	}
+	currIndex = 1;
+	while(currIndex < 4){
+		while(secondIndex < currIndex){
+			incongruentImages_F.push("stim/S"+currIndex+"_O"+secondIndex+"_FR.jpg");
+			incongruentImages_F.push("stim/S"+currIndex+"_O"+secondIndex+"_FL.jpg");
+			secondIndex += 1;
+		}
+		currIndex += 1;
+		secondIndex = 0;
+	}
+    var images = ["stim/F_EXAMPLE.png", "stim/HAND_PLACEMENT.bmp", "stim/right.bmp", "stim/wrong.bmp"];
+    images = images.concat(congruentImages_F, incongruentImages_F);
+   	jsPsych.pluginAPI.preloadImages(images);
+
+
+    // var fastMode = prompt("Run in fast mode? 0 = no, 1 = yes")
+    var fastMode = 0;
+    // create Mturk Code as subject Id
+ 	var mTurkCode = Math.floor(Math.random() * 9999999) + 1;
+    var subjectId = mTurkCode
+    
+	// this adds a subject id column to the data of every trial
+	jsPsych.data.addProperties({
+	  subject: subjectId
+	});
+
+
+    // VARIABLES:
+    var trainingLength = 12;
+    var blockLength = 52;
+    if (fastMode == "1") {
+    	trainingLength = 5;
+    	blockLength = 5;
+    }
+    var gender = "F";
+    var avatarGender = "woman";
+    var avatar = "she";
+    var avatarCaps = "SHE";
+    var exampleStim = "stim/F_EXAMPLE.jpg";
+    var both_sides = "stim/both_sides.png"
+    var instructionPages = [];
+    var congruentImages = [];
+    var incongruentImages = [];
+    // Training variables: 	
+    var trainingImages = [];
+    var trainingCues = [];
+    var trainingOrder = [];
+    var correctAnswers = [];
+    var trainingStimuliIndex = 0;
+    var currentCue;
+    var currentNum;
+    var SHE = "SHE";
+    var YOU = "YOU";
+    // Actual block variables:
+    var blockImages = [ ["stim/S2_O2_FR.jpg" , "stim/S3_O0_FL.jpg" , "stim/S3_O3_FR.jpg" , "stim/S2_O2_FR.jpg" , "stim/S0_O0_FR.jpg" ,
+        "stim/S3_O1_FR.jpg" ,"stim/S2_O0_FR.jpg" , "stim/S2_O2_FL.jpg" , "stim/S1_O1_FL.jpg" ,"stim/S3_O3_FL.jpg" , "stim/S3_O2_FR.jpg" ,
+        "stim/S3_O3_FL.jpg" ,"stim/S1_O0_FR.jpg" , "stim/S2_O2_FR.jpg" , "stim/S3_O2_FL.jpg" ,"stim/S2_O1_FR.jpg" , "stim/S1_O1_FR.jpg" ,
+        "stim/S0_O0_FL.jpg" , "stim/S1_O1_FR.jpg" , "stim/S2_O0_FR.jpg" , "stim/S1_O1_FL.jpg" , "stim/S3_O1_FR.jpg" , "stim/S1_O1_FL.jpg" ,
+        "stim/S3_O3_FL.jpg" ,"stim/S1_O1_FR.jpg" , "stim/S2_O1_FR.jpg" ,"stim/S1_O0_FL.jpg" , "stim/S3_O1_FL.jpg" , "stim/S2_O2_FL.jpg" ,
+        "stim/S2_O2_FL.jpg" ,"stim/S3_O1_FL.jpg" , "stim/S3_O0_FR.jpg", "stim/S3_O0_FR.jpg" , "stim/S3_O3_FR.jpg" , "stim/S2_O1_FL.jpg" ,
+        "stim/S3_O2_FR.jpg" , "stim/S3_O0_FL.jpg" , "stim/S2_O2_FR.jpg ", "stim/S2_O1_FL.jpg" ,"stim/S1_O0_FL.jpg" ,"stim/S2_O2_FL.jpg" ,
+        "stim/S2_O0_FL.jpg" , "stim/S3_O3_FL.jpg" , "stim/S1_O1_FL.jpg" , "stim/S0_O0_FR.jpg" , "stim/S3_O2_FL.jpg" , "stim/S3_O3_FR.jpg" ,
+        "stim/S2_O0_FL.jpg" , "stim/S1_O1_FR.jpg" , "stim/S3_O3_FR.jpg" , "stim/S0_O0_FL.jpg" ,"stim/S1_O0_FR.jpg"] ,// block 1
+
+        ["stim/S1_O0_FR.jpg" , "stim/S3_O0_FR.jpg" , "stim/S1_O0_FL.jpg" , "stim/S3_O3_FR.jpg" , "stim/S2_O2_FR.jpg" ,
+            "stim/S3_O0_FL.jpg" , "stim/S0_O0_FR.jpg" , "stim/S3_O3_FL.jpg" , "stim/S2_O0_FR.jpg" , "stim/S3_O2_FR.jpg" ,
+            "stim/S3_O0_FR.jpg" , "stim/S1_O1_FL.jpg" ,"stim/S3_O2_FL.jpg" , "stim/S1_O1_FR.jpg" , "stim/S3_O1_FL.jpg" ,
+            "stim/S3_O0_FL.jpg" , "stim/S1_O1_FL.jpg" , "stim/S3_O3_FL.jpg", "stim/S1_O1_FL.jpg" , "stim/S1_O0_FL.jpg" ,
+            "stim/S2_O2_FL.jpg" , "stim/S3_O3_FL.jpg" , "stim/S1_O1_FR.jpg" , "stim/S3_O1_FL.jpg", "stim/S2_O1_FR.jpg" ,
+            "stim/S1_O1_FL.jpg" , "stim/S1_O0_FR.jpg" , "stim/S0_O0_FR.jpg" , "stim/S2_O0_FL.jpg" , "stim/S1_O1_FR.jpg",
+            "stim/S2_O0_FR.jpg" , "stim/S3_O3_FL.jpg" ,"stim/S2_O2_FL.jpg" ,"stim/S1_O1_FR.jpg" ,"stim/S3_O2_FL.jpg" ,
+            "stim/S2_O2_FR.jpg" ,"stim/S3_O1_FR.jpg" , "stim/S2_O2_FL.jpg" , "stim/S2_O2_FR.jpg" , "stim/S3_O2_FR.jpg" ,
+            "stim/S3_O3_FR.jpg" , "stim/S3_O1_FR.jpg" , "stim/S2_O2_FR.jpg" , "stim/S0_O0_FL.jpg" , "stim/S2_O1_FL.jpg" ,
+            "stim/S3_O3_FR.jpg" , "stim/S2_O2_FL.jpg" , "stim/S3_O3_FR.jpg" , "stim/S2_O1_FL.jpg" , "stim/S2_O0_FL.jpg" ,
+            "stim/S2_O1_FR.jpg" ,"stim/S0_O0_FL.jpg"], // block 2
+
+        ["stim/S1_O0_FR.jpg", "stim/S3_O1_FR.jpg", "stim/S3_O3_FL.jpg","stim/S2_O2_FR.jpg", "stim/S3_O0_FR.jpg",
+            "stim/S3_O1_FL.jpg", "stim/S1_O1_FL.jpg", "stim/S3_O3_FL.jpg","stim/S2_O1_FL.jpg", "stim/S1_O1_FL.jpg", "stim/S3_O2_FR.jpg",
+            "stim/S3_O3_FL.jpg", "stim/S1_O1_FR.jpg", "stim/S0_O0_FL.jpg", "stim/S2_O1_FL.jpg", "stim/S1_O0_FL.jpg","stim/S3_O2_FL.jpg",
+            "stim/S2_O2_FR.jpg","stim/S1_O0_FL.jpg", "stim/S2_O2_FL.jpg", "stim/S1_O1_FL.jpg","stim/S2_O2_FR.jpg", "stim/S2_O1_FR.jpg",
+            "stim/S1_O1_FR.jpg", "stim/S2_O0_FR.jpg", "stim/S2_O2_FL.jpg", "stim/S3_O0_FL.jpg", "stim/S2_O1_FR.jpg", "stim/S2_O0_FR.jpg",
+            "stim/S3_O3_FR.jpg", "stim/S3_O1_FR.jpg", "stim/S0_O0_FR.jpg", "stim/S3_O2_FL.jpg", "stim/S1_O0_FR.jpg","stim/S2_O0_FL.jpg",
+            "stim/S1_O1_FR.jpg","stim/S3_O3_FL.jpg", "stim/S3_O2_FR.jpg", "stim/S2_O2_FR.jpg", "stim/S0_O0_FL.jpg", "stim/S1_O1_FR.jpg",
+            "stim/S3_O1_FL.jpg", "stim/S2_O2_FL.jpg", "stim/S3_O3_FR.jpg", "stim/S3_O0_FL.jpg", "stim/S3_O3_FR.jpg","stim/S3_O0_FR.jpg",
+            "stim/S3_O3_FR.jpg", "stim/S2_O0_FL.jpg", "stim/S1_O1_FL.jpg","stim/S0_O0_FR.jpg", "stim/S2_O2_FL.jpg"], // block 3
+
+        ["stim/S2_O2_FR.jpg" , "stim/S0_O0_FL.jpg" , "stim/S2_O0_FL.jpg" , "stim/S3_O2_FR.jpg" ,"stim/S3_O3_FR.jpg" ,
+            "stim/S2_O2_FL.jpg", "stim/S2_O0_FR.jpg" , "stim/S3_O0_FR.jpg" , "stim/S3_O0_FR.jpg" , "stim/S3_O3_FR.jpg" ,
+            "stim/S2_O1_FL.jpg" ,"stim/S3_O3_FL.jpg" , "stim/S3_O1_FR.jpg" , "stim/S2_O2_FR.jpg" , "stim/S1_O1_FL.jpg" ,
+            "stim/S1_O0_FR.jpg" , "stim/S2_O2_FR.jpg" ,"stim/S1_O0_FR.jpg" , "stim/S1_O1_FR.jpg" , "stim/S2_O2_FR.jpg" ,
+            "stim/S3_O1_FL.jpg" , "stim/S2_O1_FR.jpg" , "stim/S1_O1_FR.jpg" , "stim/S3_O1_FR.jpg" , "stim/S3_O3_FL.jpg" ,
+            "stim/S3_O2_FL.jpg" , "stim/S1_O0_FL.jpg" , "stim/S3_O0_FL.jpg" , "stim/S0_O0_FR.jpg" , "stim/S3_O3_FR.jpg" ,
+            "stim/S1_O1_FL.jpg" , "stim/S3_O1_FL.jpg" , "stim/S1_O1_FL.jpg" , "stim/S3_O2_FR.jpg" , "stim/S2_O2_FL.jpg" ,
+            "stim/S0_O0_FL.jpg" , "stim/S3_O0_FL.jpg" ,"stim/S2_O0_FR.jpg" , "stim/S2_O0_FL.jpg" ,"stim/S3_O3_FR.jpg" ,
+            "stim/S1_O1_FR.jpg", "stim/S2_O2_FL.jpg" ,"stim/S3_O2_FL.jpg" ,"stim/S2_O1_FR.jpg" ,"stim/S1_O1_FL.jpg" ,
+            "stim/S2_O2_FL.jpg" ,"stim/S1_O1_FR.jpg" ,"stim/S2_O1_FL.jpg" ,"stim/S3_O3_FL.jpg" ,"stim/S1_O0_FL.jpg" ,
+            "stim/S0_O0_FR.jpg" ,"stim/S3_O3_FL.jpg"] // block 4
+        ];
+
+        var blockNumbers = [
+        [1,0,3,2,0,1,2,3,1,1,3,1,0,2,2,1,3,0,1,2,3,1,1,3,3,1,1,3,2,2,3,3,3,2,2,3,0,3,2,1,1,0,3,2,1,2,3,0,1,2,3,0], // block 1
+
+        [0,3,1,3,2,0,3,3,2,3,3,1,2,2,3,0,2,1,1,1,1,3,1,3,1,3,0,0,0,3,2,1,2,1,2,1,1,2,3,3,2,1,2,2,2,3,3,2,2,0,1,0], // block 2
+
+        [1,3,2,2,0,1,2,3,1,3,2,2,1,1,1,0,3,3,0,3,1,1,2,2,0,1,3,2,0,1,3,0,3,1,2,1,1,2,2,0,3,1,2,3,3,3,0,3,2,1,2,2], // block 3
+
+        [3,0,2,2,3,3,0,0,0,1,1,2,3,1,3,1,2,1,2,1,1,2,1,3,3,3,0,3,1,3,1,1,3,2,2,3,3,0,2,1,1,2,3,2,2,2,1,1,3,0,0,2] // block 4
+
+    ];
+    var blockCues = [
+        [SHE, YOU, SHE,SHE, SHE, YOU,YOU,SHE,SHE,YOU,YOU,SHE,SHE,YOU,YOU,YOU,SHE,YOU,YOU, SHE,SHE,SHE,YOU,YOU,YOU,SHE,
+            SHE,YOU,YOU,SHE,SHE,SHE, YOU,YOU,YOU,SHE,SHE,YOU,SHE,YOU,YOU,SHE,SHE,YOU,YOU,SHE,YOU,YOU,SHE,SHE,SHE,YOU], // block 1
+
+        [YOU, YOU, SHE, SHE, YOU, YOU, YOU, SHE, SHE , YOU , SHE, SHE, YOU, YOU, YOU, SHE, SHE, SHE, YOU, YOU, SHE,
+            YOU, YOU, SHE, SHE, YOU, SHE, SHE, YOU, SHE, YOU, YOU, YOU,SHE, SHE, YOU, YOU, SHE, SHE ,SHE, YOU, SHE,
+            SHE, SHE, YOU, YOU, YOU, SHE, SHE ,SHE, YOU ,YOU], // block 2
+
+        [YOU, SHE, SHE, YOU,SHE,SHE,YOU,YOU,SHE,SHE,SHE,YOU,YOU,SHE, YOU, YOU,YOU,SHE,SHE,YOU,SHE,SHE, YOU, SHE,SHE,YOU,
+            YOU,YOU, SHE, YOU,YOU,YOU,SHE,SHE, YOU, YOU, SHE, SHE, YOU, YOU, SHE, SHE, SHE, YOU, YOU ,SHE,SHE, YOU, YOU,
+            SHE, YOU, SHE], // block 3
+
+        [YOU,SHE,SHE,YOU,SHE,SHE,YOU,YOU,SHE,SHE,SHE,YOU,YOU, SHE, YOU,YOU,YOU,SHE,SHE,YOU
+            ,SHE,SHE,YOU,SHE,SHE, YOU, YOU, YOU, SHE, YOU, YOU, YOU, SHE, SHE, YOU, YOU, SHE, SHE, YOU,
+            YOU, SHE, SHE, SHE,YOU,YOU,SHE, SHE, YOU, YOU, SHE, YOU, SHE] // block 4
+    ];
+    var blockOrder = jsPsych.randomization.shuffle([0, 1, 2, 3]);
+    var numbersInFixation = [0, 1, 2, 3];
+    var blockCorrectAnswers = [];
+    var blockStimuliIndex = 0;
+    var trialStimuliIndex = 0;
+    // Boolean indicator for fullscreen mode:
+    var fullScreen = true;
+
+	
+	function saveData(filename, filedata){
+	   $.ajax({
+	      type:'post',
+	      cache: false,
+	      url: './save_data.php', // this is the path to the above PHP script
+	      data: {filename: filename, filedata: filedata}
+	   });
+	};
+
+	// ----------------- GET SUBJECT DATA ----------------- //
+
+	var welcome = {
+		type: 'instructions',
+		key_forward: 'space',
+		pages: ["<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px; text-align:center;\'>" +
+        "<br><br><br><br><b><b>Welcome to our Experiment!</b></b><br><br>In this study you will complete a perspective taking task." +
+        "<br><br>On the next page you will be shown a general consent form before continuing to the study." +
+        "<br><br><br><br><br>Press the space bar to continue.</p>"]
+	};
+
+	var showMouseAndScroll = function() {
+		document.body.style.overflow = "scroll";
+		document.body.style.cursor = "auto";
+		document.exitPointerLock();
+	};
+
+	var startMouse = {
+		type: 'call-function',
+		func: showMouseAndScroll
+	}
+
+	var consent = {
+		type: 'survey-multi-choice',
+		questions: ["I agree to participate"],
+		options: [["Yes", "No"]],
+		required: [true],
+		horizontal: true,
+		preamble: '<div style="line-height:32px;"> <p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px;\'><br><br><br><br><br>' +
+            'If you agree to take part in this study, you will be asked to perform a computerised task. We ask ' +
+            'that you complete the task as quickly and as accurately as you can. <br>' +
+            'Following the task, you will be asked to fill out some questionnaires and answer some ' +
+            'questions.<br>All data will remain anonymous, and you may skip questions that you wish not to answer. <br>' +
+            'Taking part in this study is voluntary. If you withdraw at any time you will receive no monetary ' +
+            'compensation, otherwise you will receive the amount specified in the description of the study. <br>' +
+            'If there is anything about the study or taking part in it that is unclear or that you do not ' +
+            'understand, please contact the researcher of this study through a message in the Prolific ' +
+            'messaging system.'
+	};
+
+	var noConsentGiven = {
+		type: 'instructions',
+		key_forward: 'space',
+		pages: ["<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px; text-align:center; font-size: 22px;\'><br><br>" +
+        "<br>Thank you for your initial interest in this study. Your response has been recorded. <br><br>Press the space bar to exit.</p>"],
+		on_finish: function(data) {
+			jsPsych.endExperiment();
+		}
+	};
+
+	var checkConsent = {
+    timeline: [noConsentGiven],
+    conditional_function: function(){
+        var data = jsPsych.data.getLastTrialData();
+		var responses = JSON.parse(data.responses);
+		var code = responses.Q0;
+		if (code == "No") {
+			return true;
+		}
+		return false;
+    	}
+	}
+
+	// Get subject Prolific ID:
+	var subjectProlificID = {
+	  type: 'survey-text',
+	  questions: ["Please enter your Prolific ID:"],
+  	  on_finish: function(data) {
+			var responses = JSON.parse(data.responses);
+			var code = responses.Q0;
+			jsPsych.data.addProperties({ProlificID: code});
+			document.body.style.overflowY = "scroll";
+		}
+	};
+
+        // ----------------- SHOW INSTRUCTIONS ----------------- //
+
+        var instructions1 = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<p style=\'word-wrap: break-word; line-height:38px; margin-left:10px; margin-right:10px; text-align:left; font-size: 22px;\'><br><br>" +
+                "<left>In this task, you will see a room with a woman inside.<br>" +
+                "Red circles will sometimes appear on the left and right walls.<br>" +
+                "Here is an example:<br><br>" + "<img src='"+exampleStim+"' height=350 width=500 class=left></img> <br><left>" +
+                "</left></p><div style=\'word-wrap: break-word; margin-left:100px; " +
+                "margin-right:100px; font-size: 22px; border-color:#00BFFF; border-style:solid; border-width:thick;\'>" +
+                "<p style=\'margin-left:10px; margin-right:10px;\'>" +
+                "On half of the trials, I will ask you to verify if a given number corresponds " +
+                "to how many circles you can see from <b>your</b> perspective.<br>" +
+                "On the other half of the trials, I will ask you to verify if a given number corresponds to how many " +
+                "circles the woman can see from <b>her</b> perspective <br></p></div>" +
+                "<p style=\'margin-left:100px; margin-right:100px; font-size: 22px;\'>" +
+                "<br>Press the space bar to continue.</p>"
+        };
+
+        var instructions2 = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<div style=\"line-height:38px;\"> <p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;\'><br><br>" +
+                "Concretely, during the experiment you will see the following sequence of events: <br> <br>" +
+                "(1) a fixation cross in the centre of the screen, then <br>" +
+                "(2) the word <b>YOU</b> or <b>SHE</b> telling you which perspective you will have to verify, then <br>" +
+                "(3) a number between 0 and 3 telling the amount of circles to verify " +
+                "(sometimes the amount will match the perspective and sometimes not), then <br>" +
+                "(4) the picture of the room will appear, as soon as you see the picture if will ask you to tell " +
+                "if yes or no the number of circles announced before (3) corresponds to the number of circles seen " +
+                "from the announced perspective (2): <br> <br>" +
+                "If the number of circles matches the perspective press the <b>L</b> keyboard key (<b>YES</b> response). <br> " +
+                "If the number of circles does not match the perspective press the <b>D</b> keyboard key (<b>NO</b> response). <br><br>" +
+                "(5) After your response, you will be given a feedback (V or X) <br>" +
+                "It is important that you try to respond <b><u>as quickly and accurately as possible.</u></b> <br>" +
+                "On the following page you will see 2 examples." +
+                "<br><br><br>Press the space bar to continue.</p>"
+        };
+
+        var instructions3 = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 25px;'><br>" +
+                "<img src='"+both_sides+"' height=700 width=800 class=left>"+
+                "<center><br>Press the space bar to continue.</center></p>"
+        };
+
+        var instructions4 = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<div style=\"line-height:38px;\"> <p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 25px;'> " +
+                "<br> <br> <br> <br> <br> We will start with a practice block. <br>" +
+                "Then, there will be 4 test blocks. <br>" +
+                "In between the blocks, you can take a break. <br>" +
+                "As a reminder, try to respond <b><u>as quickly and accurately as possible.</u></b><br><br>" +
+                "Thanks again for your participation!" +
+                "<br><br>Press the space bar to continue.</p>"
+
+        };
+
+        // AFTER TRIAL BLOCKS
+        var post_training_trials = {
+            type: 'text',
+            cont_key: [76,68],
+            text: "<center><p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;'> " +
+                "<br><br><br><br><br>You have completed the practice trials. <br>" +
+                "You will now start the task. <br>" +
+                "When you are ready to continue place your fingers on the <b>D</b> and <b>L</b> keyboard keys.<br><br>" +
+                "<br><br> Press one of them to begin.</p></center>"
+        };
+
+        // A BREAK BETWEEN THE TWO BLOCKS
+        var break_between_blocks = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<center><p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 32px;'> " +
+                "<br><br>You can now take a break. When you are ready, press the space bar to continue the task.<br></p></center>"
+        };
+
+        // BEFORE QUESTIONNAIRES
+        var finished_task = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<center><p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;'> " +
+                "<br><br><br><br> You have completed the first task. <br>" +
+                "Press the space bar to continue<br></p></center>",
+            on_finish: function(data){
+                saveData(subjectId+".csv", jsPsych.data.dataAsCSV()); }
+        };
+
+        var movingToQualtrics = { type: 'text',
+            cont_key: ['space'],
+            text: "<center><p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;'> " +
+                "<br><br><br><br> For the following questionnaires you will be redirected to Qualtrics website: <br>" +
+                "<br> <b><a href='https://hujipsych.au1.qualtrics.com/jfe/form/SV_ehD50HulKjszna6'>QUESTIONNAIRES</a></b> <br> <br> <br> Once you finish you can press the space bar to continue<br></p></center>"
+        }
+
+        // AFTER ONE QUESTIONNAIRE, BEFORE THE SECOND ONE
+        var finished_first_questionnaire = {
+            type: 'text',
+            cont_key: ['space'],
+            text: "<center><p style='word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;'> " +
+                "<br><br> To proceed to the next questionnaire, please press the space bar <br> </p></center>"
+        };
+
+
+        // ----------------- QUESTIONNAIRES ----------------- //
+    var demographic_preamble = ["<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px;\'>" +
+    "<br><b>We would now like to ask you some questions about yourself.</b><br></p>"];
+
+        var demographic_questionnaire_closed = {
+        type: 'survey-multi-choice',
+        preamble: demographic_preamble,
+        questions: ["What is your gender?","I am attracted to:", "What is your racial or ethnic background?", "Is English your native language?"],
+        options: [["Male", "Female", "Other"], ["Women", "Men", "Women and Men", "I am asexual", "I prefer not to say"],
+            ["Asian/Asian American", "Black/African American", "Latino/Hispanic", "White/European American",
+                "Mixed race", "Other"],["Yes","No"]],
+        required: [true],
+        on_finish: function(data) {
+            var responses = JSON.parse(data.responses);
+            var code = responses.Q0;
+            jsPsych.data.addProperties({demographic1: code});
+        }
+    };
+
+        // Get subject age:
+	var demographic_questionnaire_open = {
+	  type: 'survey-text',
+	  questions: ["What is your age?", "Some of the items in the questionnaires you responded to in this study may have " +
+      "caused some discomfort. <br> Please note that there are no right or wrong answers. <br>" +
+      " Additionally, please remember that all of the responses you provided are anonymous and your" +
+      " privacy is guaranteed by research ethics rules.<br> If you have any comments you would like to share with us," +
+      " please do so below:"],
+  	  on_finish: function(data) {
+			var responses = JSON.parse(data.responses);
+			var code = responses.Q0;
+			jsPsych.data.addProperties({demographic2: code});
+			document.body.style.overflowY = "scroll";
+		}
+	};
+
+
+	// Objectification questionnaire
+
+    var Objectification_questions = [
+        "The first thing I notice about a woman is her body.",
+        "I treat attractive women differently than I treat unattractive women.",
+        "I like it when a woman with an attractive body wears tight clothing.",
+        "I am more likely to notice or flirt with a woman with an attractive body than one with an attractive face.",
+        "I would consider being in a relationship with a woman only if she has an attractive body.",
+        "If a woman is attractive, she does not need to have anything interesting to say.",
+        "You can tell a lot about a womans sexual availability by how she looks.",
+        "A woman should be flattered when I look at her.",
+        "I enjoy pornography.",
+        "This question is intended to verify that participants answer carefully. Please mark strongly agree.",
+        "I often imagine what women I meet on a daily basis would look like naked.",
+        "If I were to walk past a very attractive woman, I would turn around to take another look",
+        "Women who want to look good need to wear tight or revealing clothing (i.e., show a little skin)",
+        "I rarely compare how one woman looks to another.",
+        "My friends and I talk about the way women look or how attractive they are.",
+        "I frequently give women a rating based on attractiveness.",
+        "I would enjoy watching a female stripper.",
+        "My friends and I tease each other about unattractive women with whom we have had romantic encounters"
+    ];
+    var Objectification_answers = ['Disagree strongly','Disagree somewhat',
+        'Ambivalent','Agree somewhat', 'Agree strongly'];
+
+    var Objectification_preamble = ["<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px;\'>" +
+    "<br>The following questionnaire refers to your opinions about women and your attitudes regarding relations between men and women.<br>" +
+    "Please note that there are no right or wrong answers;<br> mark the answer that you find most suitable to your opinions/thoughts.<br></p>"];
+
+
+	var Objectification_test = {
+		type: 'survey-multi-choice-matrix',
+		questions: Objectification_questions,
+		options: Objectification_answers,
+        options_repeat: 1,
+		preamble: Objectification_preamble,
+		on_finish: function() {
+    	  	jsPsych.data.addDataToLastTrial({questionnaire: 1});
+    	 }
+	};
+
+	var clickNext = {
+		type: 'instructions',
+		show_clickable_nav: true,
+		pages: ["<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px;\'><br>Please press the button below to continue.</p>"]
+	};
+
+
+	var hideMouseAndScroll = function(){
+		document.body.style.overflow = "hidden";
+// 		document.body.style.cursor = 'none';
+		document.body.requestPointerLock();
+	};
+
+	var endQuestionnaires = {
+		type: 'call-function',
+		func: hideMouseAndScroll
+	};
+
+    var createImages = function(){
+    	if (gender == "M") {
+    		congruentImages = congruentImages_M;
+    		incongruentImages = incongruentImages_M;
+    	} else {
+    		congruentImages = congruentImages_F;
+    		incongruentImages = incongruentImages_F;
+    	}
+    };
+
+   	var loadImages = {
+		type: 'call-function',
+		func: createImages
+	};
+
+        // ----------------- TRAINING TRIALS ----------------- //
+    var getRandomizeNumber = function() {
+            var nums = jsPsych.randomization.shuffle(numbersInFixation);
+            return nums[0];
+        };
+	// Create training stimuli based on the subject's gender:
+	var createTrainingStimuli = function() {
+		trainingImages = jsPsych.randomization.sample(congruentImages, 6, true);
+		trainingImages = trainingImages.concat(jsPsych.randomization.sample(incongruentImages, 6, true));
+		var reactionNumber, switchParameter, randomNum;
+
+		/* RANDOM ORDER */
+        for (i = 0; i < 2; i++) {
+			for (j = 0; j < 6; j++) {
+                randomNum = getRandomizeNumber();
+                if (j<3){
+					trainingCues.push(["YOU",randomNum]);
+                    reactionNumber = parseInt(trainingImages[(i*6)+j].substring(6,7));
+				} else if (gender == "M") {
+					trainingCues.push(["HE", randomNum]);
+                    reactionNumber = parseInt(trainingImages[(i*6)+j].substring(9,10));
+				} else {
+					trainingCues.push(["SHE",randomNum]);
+                    reactionNumber = parseInt(trainingImages[(i*6)+j].substring(9,10));
+                }
+
+                switchParameter = Number(randomNum === reactionNumber);
+				switch (switchParameter) {
+                    case 0:
+                        correctAnswers.push(68);
+                        break;
+                    case 1:
+                        correctAnswers.push(76);
+                }
+			}
+		}
+		// Create a random display order for the test trials:
+		currIndex=0;
+		while(currIndex<12){trainingOrder.push(currIndex); currIndex+=1;}
+		trainingOrder = jsPsych.randomization.shuffle(trainingOrder);
+        currentCue = String(trainingCues[trainingOrder[trainingStimuliIndex]][0]);
+        currentNum = String(trainingCues[trainingOrder[trainingStimuliIndex]][1]);
+    };
+
+	var trainingStimuli = {
+		type: 'call-function',
+		func: createTrainingStimuli
+	};
+
+	var displayCue = {
+		type: 'cued-trial',
+        duration: 500,
+		prompt: function() {
+		    return currentCue;
+		}
+	};
+
+    var displayCross = {
+        type: 'cued-trial',
+        duration: 750,
+        prompt: function() {
+            return '+';
+        }
+    };
+
+
+    var displayNum = {
+        type: 'cued-trial',
+        duration: 750,
+        prompt: function() {
+            return currentNum; }
+    };
+
+	var testTrialReaction = {
+	  type: 'categorize',
+      stimulus: function() {
+          return "<img src='"+trainingImages[trainingOrder[trainingStimuliIndex]]+"' height=100% width=100%></img>"; },
+      is_html: true,
+	  key_answer: function() {
+	      return correctAnswers[trainingOrder[trainingStimuliIndex]];
+      },
+	  choices: [68, 76], // D, L
+      correct_text: "<div style='position: fixed; top: 50%; left: 50%; margin-top: -80px; margin-left: -45px;'><img src='stim/right.bmp'></img></div>",
+      incorrect_text: "<div style='position: fixed; top: 50%; left: 50%; margin-top: -80px; margin-left: -45px;'><img src='stim/wrong.bmp'></img></div>",
+	  show_stim_with_feedback: false,
+      //timing_stim: 2000,
+      //timing_response: 2000,
+	  on_finish: function() {
+	  	jsPsych.data.addDataToLastTrial({cue: currentCue, currentNum});
+	  	jsPsych.data.addDataToLastTrial({stimulus_img: trainingImages[trainingOrder[trainingStimuliIndex]]});
+	  	if (trainingImages[trainingOrder[trainingStimuliIndex]].substring(6,7) == trainingImages[trainingOrder[trainingStimuliIndex]].substring(9,10)) {
+	  		jsPsych.data.addDataToLastTrial({congruent: 1});
+	  	} else {
+	  		jsPsych.data.addDataToLastTrial({congruent: 0});
+	  	}
+	  	trainingStimuliIndex += 1;
+	  	if (trainingStimuliIndex < 12) {
+            currentCue = String(trainingCues[trainingOrder[trainingStimuliIndex]][0]);
+            currentNum = String(trainingCues[trainingOrder[trainingStimuliIndex]][1]);
+        }
+      }
+	};
+
+
+	var testTrial = {
+		timeline: [displayCross, displayCue, displayNum, testTrialReaction]
+	};
+
+	var training = {
+		timeline: [testTrial],
+		loop_function: function() {
+			if (trainingStimuliIndex < trainingLength) { return true; }
+			return false;
+		}
+	};
+
+	// ----------------- RUN SINGLE BLOCK ----------------- //
+
+        // Create images for an experiment block:
+	var createBlockStimuli = function() {
+		var reactionNumber, switchParameter;
+        blockCorrectAnswers = []
+        for (let i = 0; i< blockNumbers[blockOrder[blockStimuliIndex]].length; i++){
+            if (blockCues[blockOrder[blockStimuliIndex]][i] === YOU) {
+                reactionNumber = parseInt(blockImages[blockOrder[blockStimuliIndex]][i].substring(6,7));
+            }
+            else reactionNumber = parseInt(blockImages[blockOrder[blockStimuliIndex]][i].substring(9,10));
+            switchParameter = Number(reactionNumber === blockNumbers[blockOrder[blockStimuliIndex]][i]);
+            console.log(switchParameter);
+            switch (switchParameter) {
+                case 0: // wrong
+                    blockCorrectAnswers.push(68);
+                    break;
+                case 1: // right
+                    blockCorrectAnswers.push(76);
+            }
+        }
+
+
+        /********************* RANDOMIZED ORDER ****************************/
+		// Push 6 sets of congruent images to list (total of 48 images).
+		// The first 24 images will receive a 'YOU' cue, and the second set will receive the avatar cue.
+        /*
+		for (i = 0; i < 6; i++) {
+			blockImages = blockImages.concat(congruentImages);
+			for (k = 0; k < 8; k++) {
+                randomNum = getRandomizeNumber();
+                if (i < 3) {
+					blockCues.push(["YOU",randomNum]);
+					reactionNumber = parseInt(blockImages[(i*8)+k].substring(6,7));
+				} else {
+					reactionNumber = parseInt(blockImages[(i*8)+k].substring(9,10));
+					if (gender == "M") {
+						blockCues.push(["HE",randomNum]);
+					} else {
+						blockCues.push(["SHE",randomNum]);
+					}
+				}
+				switchParameter = Number(reactionNumber === randomNum);
+				switch (switchParameter) {
+				    case 0:
+                        blockCorrectAnswers.push(68);
+                        break;
+                    case 1:
+                        blockCorrectAnswers.push(76);
+				}
+			}
+
+
+		}
+		*/
+
+		/*
+		// Push 4 sets of incongruent images:
+		start = blockImages.length  // bug fixer
+		for (i = 0; i < 4; i++) {
+			blockImages = blockImages.concat(incongruentImages);
+			for (k = 0; k < 12; k++) {
+                randomNum = getRandomizeNumber();
+                if (i < 2) {
+					blockCues.push(["YOU", randomNum]);
+					reactionNumber = parseInt(blockImages[start+(i*12)+k].substring(6,7));
+				} else {
+					reactionNumber = parseInt(blockImages[start+(i*12)+k].substring(9,10));
+					if (gender == "M") {
+						blockCues.push(["HE", randomNum]);
+					} else {
+						blockCues.push(["SHE", randomNum]);
+					}
+				}
+				switchParameter = Number(reactionNumber === randomNum);
+				switch (switchParameter) {
+                    case 0:
+                        blockCorrectAnswers.push(68);
+                        break;
+                    case 1:
+                        blockCorrectAnswers.push(76);
+				}
+			}
+		}
+        console.log(blockCorrectAnswers);
+		*/
+    };
+
+	var blockStimuli = {
+		type: 'call-function',
+		func: createBlockStimuli
+	};
+
+
+
+	var operateExperiment = function() {
+        blockStimuliIndex = 0;
+        currentCue = String(blockCues[blockOrder[blockStimuliIndex]][trialStimuliIndex]);
+        currentNum = String(blockNumbers[blockOrder[blockStimuliIndex]][trialStimuliIndex]);
+    }
+    /*
+    var randomizeBlockOrder = function() {
+    // Create a random display order for the block trials:
+    var currIndex=0;
+    while (blockOrder.length > 0) {
+        blockOrder.pop();
+    }
+    while(currIndex<4){blockOrder.push(currIndex); currIndex+=1;}
+    blockOrder = jsPsych.randomization.shuffle(blockOrder);
+    blockStimuliIndex = 0;
+    currentCue = String(blockCues[blockOrder[blockStimuliIndex]][trialStimuliIndex]);
+    currentNum = String(blockNumbers[blockOrder[blockStimuliIndex]][trialStimuliIndex]);
+
+    };
+
+
+	var randomizeBlock = {
+		type: 'call-function',
+		func: randomizeBlockOrder
+	};
+
+    */
+        var operateExp = {
+	    type: 'call-function',
+        func: operateExperiment
+    };
+
+	var blockTrialReaction = {
+	  type: 'categorize',
+      stimulus: function() {
+	      return "<div style='position: fixed; top: 35%; left: 40%;  margin-top: -146px; margin-left: -233px; text-align: center;'><img src='"+blockImages[blockOrder[blockStimuliIndex]][trialStimuliIndex]+"' height=530 width=800></img></div>"; },
+      is_html: true,
+      key_answer: function() {
+          return blockCorrectAnswers[trialStimuliIndex];
+      },
+	  choices: [68, 76],// D, L
+      correct_text: "<div style='position: fixed; top: 50%; left: 50%; margin-top: -80px; margin-left: -45px;'><img src='stim/right.bmp'></img></div>",
+      incorrect_text: "<div style='position: fixed; top: 50%; left: 50%; margin-top: -80px; margin-left: -45px;'><img src='stim/wrong.bmp'></img></div>",
+      show_stim_with_feedback: false,
+      //timing_stim: 2000,
+      //timing_response:2000,
+        //stimulus_duration: 2000,
+	  on_finish: function(trial_data) {
+          var correct = (trial_data.key_press == blockCorrectAnswers[trialStimuliIndex]);
+          jsPsych.data.addDataToLastTrial({stimulus_img: blockImages[blockOrder[blockStimuliIndex]][trialStimuliIndex]});
+          jsPsych.data.addDataToLastTrial({correct: correct});
+          jsPsych.data.addDataToLastTrial({cue: currentCue, currentNum});
+          jsPsych.data.addDataToLastTrial({correct_key: blockCorrectAnswers[trialStimuliIndex]});
+          if (blockImages[blockOrder[blockStimuliIndex]][trialStimuliIndex].substring(6, 7) == blockImages[blockOrder[blockStimuliIndex]][trialStimuliIndex].substring(9, 10)) {
+              jsPsych.data.addDataToLastTrial({congruent: 1});
+          } else {
+              jsPsych.data.addDataToLastTrial({congruent: 0});
+          }
+          //blockStimuliIndex += 1;
+          trialStimuliIndex += 1;
+          if (trialStimuliIndex < blockLength){
+              currentCue = String(blockCues[blockOrder[blockStimuliIndex]][trialStimuliIndex]);
+              currentNum = String(blockNumbers[blockOrder[blockStimuliIndex]][trialStimuliIndex]);
+          }
+      }
+	};
+	
+	var blockTrial = {
+		timeline: [displayCross, displayCue, displayNum, blockTrialReaction]
+	};
+
+	var singleBlock = {
+		timeline: [blockTrial],
+		loop_function: function() {
+            // Change back to 96 later:
+            if (trialStimuliIndex < blockLength) { return true; }
+			return false;
+		}
+	};
+
+	var increaseBlockStimuliIndex = function (){
+        blockStimuliIndex += 1;
+        trialStimuliIndex = 0;
+    }
+
+    var moveBlock = {
+        type: 'call-function',
+        func: increaseBlockStimuliIndex
+    };
+    
+    var isScreenFull = function() {
+        if (!document.isFullScreen && !document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+            fullScreen = false;
+        }
+    }
+    
+    var checkFullScreen = {
+        type: 'call-function',
+		func: isScreenFull,
+		on_finish: function(data){
+		    jsPsych.data.addProperties({full_screen: fullScreen});
+		}
+    }
+    /*
+	var debriefing = {
+		type: 'text',
+		cont_key: ['space'],
+		text: '<p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;\'><br>' +
+            'Thank you for completing the study.<br><br>In this experiment we were interested in examining whether it is easier (i.e., quicker) to take your own perspective vs. another person\'s perspective. In addition we were interested to examine whether certain personality traits (for example, power) are related to the differences in taking one\'s own vs. another person\'s perspective.<br><br><br><br><br><br>Press the space bar to continue.</p>',
+		on_finish: function(data){ 
+		    saveData(subjectId+".csv", jsPsych.data.dataAsCSV()); }
+	};
+
+     */
+
+	var endExp = {
+		type: 'text',
+		cont_key: ['q'],
+		text: '<div style="line-height:32px;"> <p style=\'word-wrap: break-word; margin-left:100px; margin-right:100px; font-size: 22px;\'>' +
+            '<br><h2><b>Thank you for completing this study!</b></h2>' +
+            'In this study, we were interested in examining how people take the perspective of women. <br>' +
+            'If you have any questions about the study, please contact the researcher of this study via the messaging system.' +
+            '<br><br> Press "Q" to exit </a></p> </div>',
+        on_finish: function(data){
+            saveData(subjectId+".csv", jsPsych.data.dataAsCSV()); }
+	};
+
+
+	var timeline = [];
+	timeline.push(startMouse);
+	timeline.push(welcome, consent, checkConsent);
+	timeline.push(subjectProlificID, checkFullScreen);
+	timeline.push(instructions1, instructions2, instructions3, instructions4);
+	timeline.push(loadImages, trainingStimuli, training, post_training_trials)
+    timeline.push(blockStimuli, operateExp, singleBlock, moveBlock, break_between_blocks, singleBlock, moveBlock,
+    break_between_blocks, singleBlock, moveBlock, break_between_blocks, singleBlock);
+	//timeline.push(finished_task, Objectification_test, finished_first_questionnaire, demographic_questionnaire_closed,
+        // demographic_questionnaire_open, endQuestionnaires);
+    timeline.push(finished_task,endExp, movingToQualtrics);
+    //endQuestionnaires);
+    //timeline.push(checkFullScreen);
+    //timeline.push(startMouse);
+	//timeline.push(endExp);
+	
+
+	jsPsych.init({
+		default_iti: 750, // Defines the time invterval between trials
+	   	// code to define the experiment structure would go here...
+	   	timeline: timeline,
+	   	fullscreen: true,
+	   //on_finish: function(data){ saveData(subjectId+".csv", jsPsych.data.dataAsCSV()) }
+	});
+
+    </script>
+
+</html>
